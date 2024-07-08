@@ -1,0 +1,39 @@
+-- | Module for managing financial accounts.
+module Account where
+
+import DA.Text (isEmpty)
+
+-- | Represents a financial account held by a party at a custodian institution.
+template Account
+  with
+    owner : Party
+      -- ^ The party who owns this account
+    custodian : Party
+      -- ^ The financial institution that manages this account
+    id : Text
+      -- ^ A unique identifier for this account
+  where
+    signatory custodian
+    observer owner
+
+    ensure not (isEmpty id)
+
+    -- | Allows the account owner to close their account.
+    choice CloseAccount : ()
+      controller owner
+      do
+        -- In a real-world scenario, we would check for zero balance here
+        -- and potentially transfer any remaining funds.
+        return ()
+
+    -- | Allows the custodian to update account details.
+    choice UpdateAccountDetails : ContractId Account
+      with
+        newId : Text
+      controller custodian
+      do
+        create this with id = newId
+    choice Account_Fetch : Account
+      controller custodian
+      do
+        return this

@@ -1,0 +1,79 @@
+-- | Module for setting up and demonstrating the investment trading system.
+module Setup where
+
+import Daml.Script
+import Account (Account(..),Account_Fetch(..))
+import Investments (InvestmentProduct(..),InvestmentProduct_Fetch(..))
+import Holding (Holding(..))
+import Trading (Offer(..), Settlement(..), Settle(..), Accept(..))
+import DA.Date (Month(Jul), date)
+
+-- | Demonstrates the full lifecycle of creating accounts, issuing products, and trading.
+setup : Script ()
+setup = script do
+  -- Allocate parties
+  alice <- allocatePartyWithHint "Alice" (PartyIdHint "Alice")
+  bob <- allocatePartyWithHint "Bob" (PartyIdHint "Bob")
+  bank <- allocatePartyWithHint "Bank" (PartyIdHint "Bank")
+
+  -- Create accounts
+  aliceAccountCid <- submit bank do
+    createCmd Account with
+      owner = alice
+      custodian = bank
+      id = "Alice_Account"
+
+  bobAccountCid <- submit bank do
+    createCmd Account with
+      owner = bob
+      custodian = bank
+      id = "Bob_Account"
+
+  -- Fetch the actual Account contracts
+  aliceAccount <- submit bank do exerciseCmd aliceAccountCid Account_Fetch
+  bobAccount <- submit bank do exerciseCmd bobAccountCid Account_Fetch
+
+  -- Create an investment product
+  reitsCid <- submit alice do
+    createCmd InvestmentProduct with
+      issuer = alice
+      name = "Real Estate Investment Trusts (REITs)"
+      category = "Real Estate"
+      riskProfile = "Moderate"
+      potentialReturn = "Moderate"
+      access = "Retail & Institutional"
+      liquidity = "Moderate"
+      regulation = "High"
+      management = "Professionally Managed"
+
+  -- Fetch the actual InvestmentProduct contract
+  reits <- submit alice do exerciseCmd reitsCid InvestmentProduct_Fetch
+
+  -- Issue some REITs to Alice
+  aliceHolding <- submit bank do
+    createCmd Holding with
+      account = aliceAccount
+      asset = reits
+      amount = 1000.0
+
+  -- Alice offers to sell some REITs to Bob
+  offer <- submit alice do
+    createCmd Offer with
+      seller = alice
+      buyer = bob
+      asset = reits
+      amount = 100.0
+      price = 1000.0
+      expiryDate = date 2024 Jul 31
+
+  -- Bob accepts the offer
+  settlement <- submit bob do
+    exerciseCmd offer Accept
+
+  -- Settle the trade
+  --submit alice do
+  --  exerciseCmd settlement Settle with
+  --    sellerAccount = aliceAccount
+  --    buyerAccount = bobAccount
+
+  return ()

@@ -1,0 +1,31 @@
+module Holding where
+
+import Account (Account)
+import Investments (InvestmentProduct)
+
+template Holding
+  with
+    account : Account
+    asset : InvestmentProduct
+    amount : Decimal
+  where
+    signatory account.custodian
+    observer account.owner
+
+    key (account, asset) : (Account, InvestmentProduct)
+    maintainer key._1.custodian
+
+    ensure amount > 0.0
+
+    choice TransferHolding : (ContractId Holding, ContractId Holding)
+      with
+        recipient : Account
+        transferAmount : Decimal
+      controller account.owner
+      do
+        assert (transferAmount > 0.0 && transferAmount <= amount)
+        remainingHolding <- create this with amount = amount - transferAmount
+        newHolding <- create this with
+          account = recipient
+          amount = transferAmount
+        return (remainingHolding, newHolding)

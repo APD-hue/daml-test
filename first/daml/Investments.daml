@@ -1,0 +1,64 @@
+-- | Module for defining and managing investment products.
+module Investments where
+
+import DA.Text (isEmpty)
+
+-- | Represents a financial investment product.
+template InvestmentProduct
+  with
+    issuer : Party
+      -- ^ The party issuing this investment product
+    name : Text
+      -- ^ The name of the investment product
+    category : Text
+      -- ^ The category of the investment (e.g., "Real Estate", "Foreign Currency")
+    riskProfile : Text
+      -- ^ The risk level associated with this investment
+    potentialReturn : Text
+      -- ^ The potential return level of this investment
+    access : Text
+      -- ^ Who can access this investment product
+    liquidity : Text
+      -- ^ The liquidity level of this investment
+    regulation : Text
+      -- ^ The level of regulation for this investment
+    management : Text
+      -- ^ How this investment is managed
+  where
+    signatory issuer
+
+    ensure not (isEmpty name)
+      && not (isEmpty category)
+      && not (isEmpty riskProfile)
+      && not (isEmpty potentialReturn)
+      && not (isEmpty access)
+      && not (isEmpty liquidity)
+      && not (isEmpty regulation)
+      && not (isEmpty management)
+
+    -- | Allows the issuer to update the product details.
+    choice UpdateProductDetails : ContractId InvestmentProduct
+      with
+        newName : Text
+        newCategory : Text
+        newRiskProfile : Text
+        newPotentialReturn : Text
+        newAccess : Text
+        newLiquidity : Text
+        newRegulation : Text
+        newManagement : Text
+      controller issuer
+      do
+        create this with
+          name = newName
+          category = newCategory
+          riskProfile = newRiskProfile
+          potentialReturn = newPotentialReturn
+          access = newAccess
+          liquidity = newLiquidity
+          regulation = newRegulation
+          management = newManagement
+    choice InvestmentProduct_Fetch : InvestmentProduct
+      controller issuer
+      do
+        return this

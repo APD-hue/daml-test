@@ -1,0 +1,52 @@
+module Trading where
+
+import Account (Account)
+import Holding (Holding(..))
+import Investments (InvestmentProduct)
+
+template Offer
+  with
+    seller : Party
+    buyer : Party
+    asset : InvestmentProduct
+    amount : Decimal
+    price : Decimal
+    expiryDate : Date
+  where
+    signatory seller
+    observer buyer
+
+    ensure amount > 0.0 && price > 0.0
+
+    choice Accept : ContractId Settlement
+      controller buyer
+      do create Settlement with ..
+
+template Settlement
+  with
+    seller : Party
+    buyer : Party
+    asset : InvestmentProduct
+    amount : Decimal
+    price : Decimal
+  where
+    signatory seller, buyer
+
+    choice Settle : ()
+      with
+        sellerAccount : Account
+        buyerAccount : Account
+      controller seller, buyer
+      do
+        (sellerHoldingCid, sellerHolding) <- fetchByKey @Holding (sellerAccount, asset)
+        assert (sellerHolding.amount >= amount)
+        archive sellerHoldingCid
+        create Holding with
+          account = sellerAccount
+          asset = asset
+          amount = sellerHolding.amount - amount
+        create Holding with
+          account = buyerAccount
+          asset = asset
+          amount = amount
+        return ()
