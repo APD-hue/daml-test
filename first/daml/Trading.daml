@@ -1,9 +1,10 @@
 module Trading where
 
-import Account (Account)
+--import Account (Account)
+import Account (InvestmentAccount)
 import Holding (Holding(..))
-import Investments (InvestmentProduct)
-
+--import Investments (InvestmentProduct)
+import Asset (InvestmentProduct)
 template Offer
   with
     seller : Party
@@ -21,8 +22,10 @@ template Offer
 
     choice AcceptAndPropose : ContractId SettlementProposal
       with
-        buyerAccount : Account
-        sellerAccount : Account
+        --buyerAccount : Account
+        --sellerAccount : Account
+        buyerAccount : InvestmentAccount
+        sellerAccount : InvestmentAccount
       controller buyer
       do
         create SettlementProposal with
@@ -36,8 +39,10 @@ template SettlementProposal
     amount : Decimal
     price : Decimal
     bank : Party
-    buyerAccount : Account
-    sellerAccount : Account
+    --buyerAccount : Account
+    --sellerAccount : Account
+    buyerAccount : InvestmentAccount
+    sellerAccount : InvestmentAccount
   where
     signatory seller, buyer
     observer bank
@@ -55,8 +60,10 @@ template SettlementExecution
     amount : Decimal
     price : Decimal
     bank : Party
-    buyerAccount : Account
-    sellerAccount : Account
+    --buyerAccount : Account
+    --sellerAccount : Account
+    buyerAccount : InvestmentAccount
+    sellerAccount : InvestmentAccount
   where
     signatory seller, buyer, bank
 
