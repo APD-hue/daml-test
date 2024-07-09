@@ -5,8 +5,9 @@ import Daml.Script
 import Account (Account(..),Account_Fetch(..))
 import Investments (InvestmentProduct(..),InvestmentProduct_Fetch(..))
 import Holding (Holding(..))
-import Trading (Offer(..), Settlement(..), Settle(..), Accept(..))
+import Trading (ApproveSettlement(..), Offer(..), ExecuteSettlement(..),AcceptAndPropose(..))
 import DA.Date (Month(Jul), date)
+
 
 -- | Demonstrates the full lifecycle of creating accounts, issuing products, and trading.
 setup : Script ()
@@ -65,15 +66,20 @@ setup = script do
       amount = 100.0
       price = 1000.0
       expiryDate = date 2024 Jul 31
+      bank = bank
 
-  -- Bob accepts the offer
-  settlement <- submit bob do
-    exerciseCmd offer Accept
+  -- Bob accepts the offer and proposes settlement in one atomic action
+  settlementProposal <- submit bob do
+    exerciseCmd offer AcceptAndPropose with
+      buyerAccount = bobAccount
+      sellerAccount = aliceAccount
 
-  -- Settle the trade
-  --submit alice do
-  --  exerciseCmd settlement Settle with
-  --    sellerAccount = aliceAccount
-  --    buyerAccount = bobAccount
+  -- Bank approves the settlement proposal
+  settlementExecution <- submit bank do
+    exerciseCmd settlementProposal ApproveSettlement
+
+  -- Bank executes the settlement
+  submit bank do
+    exerciseCmd settlementExecution ExecuteSettlement
 
   return ()

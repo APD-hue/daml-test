@@ -12,31 +12,56 @@ template Offer
     amount : Decimal
     price : Decimal
     expiryDate : Date
+    bank : Party
   where
     signatory seller
-    observer buyer
+    observer buyer, bank
 
     ensure amount > 0.0 && price > 0.0
 
-    choice Accept : ContractId Settlement
+    choice AcceptAndPropose : ContractId SettlementProposal
+      with
+        buyerAccount : Account
+        sellerAccount : Account
       controller buyer
-      do create Settlement with ..
+      do
+        create SettlementProposal with
+          seller; buyer; asset; amount; price; bank; buyerAccount; sellerAccount
 
-template Settlement
+template SettlementProposal
   with
     seller : Party
     buyer : Party
     asset : InvestmentProduct
     amount : Decimal
     price : Decimal
+    bank : Party
+    buyerAccount : Account
+    sellerAccount : Account
   where
     signatory seller, buyer
+    observer bank
 
-    choice Settle : ()
-      with
-        sellerAccount : Account
-        buyerAccount : Account
-      controller seller, buyer
+    choice ApproveSettlement : ContractId SettlementExecution
+      controller bank
+      do
+        create SettlementExecution with ..
+
+template SettlementExecution
+  with
+    seller : Party
+    buyer : Party
+    asset : InvestmentProduct
+    amount : Decimal
+    price : Decimal
+    bank : Party
+    buyerAccount : Account
+    sellerAccount : Account
+  where
+    signatory seller, buyer, bank
+
+    choice ExecuteSettlement : ()
+      controller bank
       do
         (sellerHoldingCid, sellerHolding) <- fetchByKey @Holding (sellerAccount, asset)
         assert (sellerHolding.amount >= amount)
