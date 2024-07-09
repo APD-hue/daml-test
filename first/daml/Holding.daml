@@ -1,25 +1,28 @@
 module Holding where
 
-import Account (Account)
+import Account (InvestmentAccount)
 import Investments (InvestmentProduct)
 
 template Holding
   with
-    account : Account
+    --account : Account
+    account : InvestmentAccount
     asset : InvestmentProduct
     amount : Decimal
   where
     signatory account.custodian
     observer account.owner
 
-    key (account, asset) : (Account, InvestmentProduct)
+    --key (account, asset) : (Account, InvestmentProduct)
+    key (account, asset) : (InvestmentAccount, InvestmentProduct)
     maintainer key._1.custodian
 
     ensure amount > 0.0
 
     choice TransferHolding : (ContractId Holding, ContractId Holding)
       with
-        recipient : Account
+        --recipient : Account
+        recipient : InvestmentAccount
         transferAmount : Decimal
       controller account.owner
       do

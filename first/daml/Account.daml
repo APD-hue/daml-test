@@ -4,7 +4,8 @@ module Account where
 import DA.Text (isEmpty)
 
 -- | Represents a financial account held by a party at a custodian institution.
-template Account
+--template Account
+template InvestmentAccount
   with
     owner : Party
       -- ^ The party who owns this account
@@ -27,13 +28,43 @@ template Account
         return ()
 
     -- | Allows the custodian to update account details.
-    choice UpdateAccountDetails : ContractId Account
+    --choice UpdateAccountDetails : ContractId Account
+    choice UpdateAccountDetails : ContractId InvestmentAccount
       with
         newId : Text
       controller custodian
       do
         create this with id = newId
-    choice Account_Fetch : Account
+    --choice Account_Fetch : Account
+    choice Account_Fetch : InvestmentAccount
       controller custodian
       do
         return this
+
+template BankAccount
+  with
+    owner : Party
+    custodian : Party
+    id : Text
+    currency : Text
+    balance : Decimal
+  where
+    signatory owner, custodian
+
+    key (owner, custodian, id) : (Party, Party, Text)
+    maintainer key._2
+
+    choice DepositFunds : ContractId BankAccount
+      with
+        amount : Decimal
+      controller custodian
+      do
+        create this with balance = balance + amount
+
+    choice WithdrawFunds : ContractId BankAccount
+      with
+        amount : Decimal
+      controller custodian
+      do
+        assert (balance >= amount)
+        create this with balance = balance - amount
